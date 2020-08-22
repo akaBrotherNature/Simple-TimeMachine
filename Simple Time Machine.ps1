@@ -6,9 +6,9 @@
 
 # --------------------------------- Settings --------------------------------- #
 
-$folderToBackup = "$env:USERPROFILE\Documents\"
+$folderToBackup = "$env:USERPROFILE\Documents\".TrimEnd("\")
 
-$backupDestination = "S:\Backup\Simple TimeMachine\"
+$backupDestination = "S:\Backup\Simple TimeMachine\".TrimEnd("\")
 
 $backupInterval = 10 # In minutes 
 
