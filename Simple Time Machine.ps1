@@ -1,10 +1,10 @@
-
 # ---------------------------------------------------------------------------- #
 #                              Simple TimeMachine                              #
 # ---------------------------------------------------------------------------- #
 
-# --------------------------------- Settings --------------------------------- #
 
+
+# --------------------------------- Settings --------------------------------- #
 
 $folderToBackup = "$env:USERPROFILE\Documents\"
 
@@ -13,6 +13,8 @@ $backupDestination = "S:\Backup\Simple TimeMachine\"
 $backupInterval = 10 # In minutes 
 
 $retentionTime = 30 # Days to keep files
+
+
 
 # ---------------------------- File change watcher --------------------------- #
 
@@ -29,7 +31,6 @@ $action =
 
 {
     $path = $event.SourceEventArgs.FullPath
-    Write-Output "Path: $path"
     $changedFiles.Add($path)
 
 }
@@ -37,6 +38,8 @@ $action =
 Register-ObjectEvent $watcher "Changed" -Action $action
 Register-ObjectEvent $watcher "Created" -Action $action
 Register-ObjectEvent $watcher "Renamed" -Action $action
+
+
 
 # --------------------------- Backup on timed loop --------------------------- #
 
@@ -54,7 +57,7 @@ do {
 
     foreach ($item in $changedFilesToProcess) {
 
-        # Add item if it exists and is a file
+        # Add item if it still exists and is a file
         if ((Test-Path -Path $item) -And (Test-Path -Path $item -PathType Leaf)) {
 
             $filesToBackup.Add($item)
@@ -76,25 +79,23 @@ do {
     
         # Backup path
         $backupPath = Join-Path $backupDestination (($file | Split-Path -Parent) -replace [regex]::Escape($folderToBackup))
-        
-
-
+      
         # Backup
         New-Item -Path (Join-Path $backupPath $newFilename) -Force
         Copy-Item -Path $file -Destination (Join-Path $backupPath $newFilename)
         "Copied `"$backupPath$newFilename`"" | Out-File -FilePath (Join-Path $backupDestination "Simple TimeMachine Log.txt") -Encoding utf8 -Append
     
     }
+    
     "[$timestamp] - Going to sleep" | Out-File -FilePath (Join-Path $backupDestination "Simple TimeMachine Log.txt") -Encoding utf8 -Append
 
     Start-Sleep -Seconds ($backupInterval * 60)
-
     
 
 
     # ---------------------------- Backup maintainence --------------------------- #
 
-    # Delete files more than 30 days old
+    # Delete files older than retention time
     Get-ChildItem -Path $backupDestination -File -Recurse | Where-Object { $_.CreationTime -lt ((Get-Date).AddDays(-$retentionTime)) } | ForEach-Object {
         
 
@@ -128,10 +129,6 @@ do {
             }
         }
     } while ($EmptyFolderFound -eq $true)
-
-
-    # Robocopy to master backup
-    robocopy $folderToBackup "S:\Backup\Master Document Archive" /XF "desktop.ini" /mt /r:1 /w:1
 
 } while ($true)
 
